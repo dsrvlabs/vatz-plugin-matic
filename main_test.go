@@ -1,27 +1,72 @@
 package main
 
 import (
-	"log"
-	"net"
+	"encoding/json"
+	"fmt"
+	"os"
+	"syscall"
 	"testing"
+	"time"
 
-	"google.golang.org/grpc"
+	"golang.org/x/net/context"
+	"google.golang.org/protobuf/types/known/structpb"
 
-	"github.com/dsrvlabs/vatz-plugin-matic/plugin"
+	"github.com/dsrvlabs/vatz-plugin-matic/mocks"
+	pb "github.com/dsrvlabs/vatz-plugin-matic/plugin"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGrpc(t *testing.T) {
-	c, err := net.Listen("tcp", "0.0.0.0:9091")
-	if err != nil {
-		log.Println(err)
+	ch := make(chan os.Signal, 1)
+
+	go func() {
+		time.Sleep(time.Millisecond * 100)
+		ch <- syscall.SIGTERM
+	}()
+
+	startServer(ch)
+}
+
+// TODO: Test invalid parameters.
+func TestExecuteUp(t *testing.T) {
+	// Mock
+	mockExecutor := mocks.Executor{}
+	executor = &mockExecutor
+
+	mockExecutor.On("IsBorUp").Return(true, nil)
+
+	// Prepare test
+	s := pluginServer{}
+
+	ctx := context.Background()
+	req := &pb.ExecuteRequest{
+		ExecuteInfo: &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"function": structpb.NewStringValue("IsBorUp"),
+			},
+		},
 	}
 
-	s := grpc.NewServer()
+	// Test
+	resp, err := s.Execute(ctx, req)
 
-	serv := pluginServer{}
-	plugin.RegisterManagerPluginServer(s, &serv)
+	// Asserts
+	assert.Nil(t, err)
+	assert.NotNil(t, resp)
+	mockExecutor.AssertExpectations(t)
+}
 
-	if err := s.Serve(c); err != nil {
-		log.Panic(err)
+func TestRequestJson(t *testing.T) {
+	req := pb.ExecuteRequest{
+		ExecuteInfo: &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"function": structpb.NewStringValue("IsBorUp"),
+			},
+		},
 	}
+
+	d, err := json.Marshal(&req)
+
+	fmt.Println(err)
+	fmt.Println(string(d))
 }
