@@ -53,7 +53,7 @@ func (e *maticExecutor) IsBorUp() (bool, error) {
 	return isProcessRunning("bor", []string{})
 }
 
-func isProcessRunning(pName string, mustHaveArgs []string) (bool, error) {
+func isProcessRunning(name string, mustHaveArgs []string) (bool, error) {
 	ps, err := process.Processes()
 	if err != nil {
 		return false, err
@@ -70,7 +70,7 @@ func isProcessRunning(pName string, mustHaveArgs []string) (bool, error) {
 			continue
 		}
 
-		if pName != pName {
+		if name != pName {
 			continue
 		}
 
@@ -85,6 +85,10 @@ func isProcessRunning(pName string, mustHaveArgs []string) (bool, error) {
 
 		if isRunning, err = p.IsRunning(); err != nil {
 			return false, err
+		}
+
+		if isRunning {
+			log.Println(p.Name())
 		}
 
 		return isRunning, nil
