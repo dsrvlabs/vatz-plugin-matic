@@ -29,5 +29,3 @@ require (
 	google.golang.org/grpc v1.46.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
-
-replace github.com/dsrvlabs/vatz/sdk => /home/rootwarp/git/vatz/sdk
